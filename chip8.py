@@ -24,7 +24,7 @@ class Memory(object):
 
     def __post_init__(self):
         self.mem    = [0]*4096
-        self.gfx    = [0]*32*64
+        self.gfx    = [0]*32*64 #[[0]*64 for x in range(32)]
         self.keypad = [0]*16
         # Load fontset
         self.mem[0:79] = [0xF0, 0x90, 0x90, 0x90, 0xF0,
@@ -46,12 +46,16 @@ class Memory(object):
 
 class Chip8(object):
 
-    def __init__(self):
+    def __init__(self, screen, keypad):
         self.reg = Registers()
         self.mem = Memory()
         self.tim = Timers()
         self.opcode_handler = OpcodeHandler(self)
-        self.draw_flag = False
+        self.draw_flag = True
+        self.wait_for_key = False
+        self.ticks = 0
+        self.screen = screen
+        self.keypad = keypad
 
     def load_game(self, game):
         data = open("roms/" + game + ".rom", "rb").read()
@@ -75,3 +79,5 @@ class Chip8(object):
         if self.tim.sound > 0:
             if self.tim.sound == 1:
                 print('\a')
+
+        self.ticks += 1
