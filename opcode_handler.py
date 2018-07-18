@@ -1,6 +1,8 @@
 import chip8
 from random import random
 import math
+import sys
+import curses
 
 def log(s):
     with open("log", "a") as f:
@@ -115,24 +117,34 @@ class OpcodeHandler(object):
             self.c8.reg.v[x] = int(random()*256) & kk
 
         elif opcode & 0xF000 == 0xD000: # Dxyn - DRW Vx, Vy, nibble
-            x_pos = self.c8.reg.v[x]
-            y_pos = self.c8.reg.v[y]
+            x_coordinate = self.c8.reg.v[x]
+            y_coordinate = self.c8.reg.v[y]
             self.c8.reg.v[0xF] = 0
 
-            for y_index in range(n):
+            for y_offset in range(n): # y_index is row of sprite
 
-                sprite_int = self.c8.mem.mem[y_index + self.c8.reg.i]
+                sprite_int = self.c8.mem.mem[y_offset + self.c8.reg.i]
+                # get byte representation
 
-                for offset, bit in enumerate(bin(sprite_int)[2:]):
-                    if int(bit) == 1:
+                for x_offset, bit in enumerate(format(sprite_int, '08b')):
+                    # loop over each bit in the byte
 
-                        gfx_mem_index = y_pos * 64 + x_pos + offset
+                    gfx_mem_index = ( y_coordinate + y_offset * 64 ) + x_coordinate + x_offset
+                    pixel = self.c8.mem.gfx[gfx_mem_index]
 
-                        if self.c8.mem.gfx[gfx_mem_index] == 1:
-                            self.c8.reg.v[0xF] = 1
-                            self.c8.mem.gfx[gfx_mem_index] = 0
-                        else:
-                            self.c8.mem.gfx[gfx_mem_index] = 1
+                    # XOR written like this for clarity
+                    if int(bit) == 1 and pixel == 1:
+                        self.c8.reg.v[0xF] = 1
+                        self.c8.mem.gfx[gfx_mem_index] = 0
+
+                    if int(bit) == 1 and pixel == 0:
+                        self.c8.mem.gfx[gfx_mem_index] = 1
+
+                    if int(bit) == 0 and pixel == 1:
+                        self.c8.mem.gfx[gfx_mem_index] = 1
+
+                    if int(bit) == 0 and pixel == 0:
+                        self.c8.mem.gfx[gfx_mem_index] = 0
 
             self.c8.draw_flag = True
 
@@ -153,17 +165,12 @@ class OpcodeHandler(object):
             self.c8.reg.v[x] = self.c8.tim.delay
 
         elif opcode & 0xF0FF == 0xF00A: # Fx0A - LD Vx, K
-            # Wait for a key press, store the value of the key in Vx.
-            # All execution stops until a key is pressed
-            # then the value of that key is stored in Vx
-            # key = screen.getch()
-            #emu.wait_for_key = True
+            # Ghetto solution
             self.c8.screen.nodelay(False)
-            key = self.c8.screen.getch()
-
-            if key in self.c8.keypad:
-                self.c8.reg.v[x] = self.keypad[key]
-
+            key = chr(self.c8.screen.getch())
+            if key != -1:
+                if key in self.c8.keypad:
+                    self.c8.reg.v[x] = self.c8.keypad[key]
             self.c8.screen.nodelay(True)
 
         elif opcode & 0xF0FF == 0xF015: # Fx15 - LD DT, Vx
@@ -201,6 +208,12 @@ class OpcodeHandler(object):
 
         else:
             print("Unknown opcode: " + hex(opcode))
+            log("Unknown opcode: " + hex(opcode))
+            curses.nocbreak()
+            self.c8.screen.keypad(False)
+            curses.echo()
+            curses.endwin()
+            sys.exit()
 
         with open("log", "a") as f:
             f.write( hex(opcode) + " " + str(self.c8.ticks) )

@@ -52,7 +52,6 @@ class Chip8(object):
         self.tim = Timers()
         self.opcode_handler = OpcodeHandler(self)
         self.draw_flag = True
-        self.wait_for_key = False
         self.ticks = 0
         self.screen = screen
         self.keypad = keypad
