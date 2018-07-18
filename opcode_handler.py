@@ -17,11 +17,11 @@ class OpcodeHandler(object):
         # Everything was learned here
         # http://devernay.free.fr/hacks/chip8/C8TECH10.HTM
 
-        nnn = opcode & 0x0FFF
-        n   = opcode & 0x000F
+        nnn =  opcode & 0x0FFF
+        n   =  opcode & 0x000F
         x   = (opcode & 0x0F00) >> 8
         y   = (opcode & 0x00F0) >> 4
-        kk  = opcode & 0x00FF
+        kk  =  opcode & 0x00FF
 
         if opcode == 0x00EE: # 00EE: Return from subroutine
             self.c8.reg.pc = self.c8.reg.stack.pop()
@@ -50,7 +50,7 @@ class OpcodeHandler(object):
                 self.c8.reg.pc += 2
 
         elif opcode & 0xF000 == 0x6000: # 6xkk - LD Vx, byte
-            log("load v" + str(x) + " with " + str(kk))
+            #log("load v" + str(x) + " with " + str(kk))
             self.c8.reg.v[x] = kk
 
         elif opcode & 0xF000 == 0x7000: # 7xkk - ADD Vx, byte
@@ -120,8 +120,8 @@ class OpcodeHandler(object):
             reg_x_coordinate = self.c8.reg.v[x]
             reg_y_coordinate = self.c8.reg.v[y]
 
-            log("REG_X: " + str(x) + " " + str(reg_x_coordinate))
-            log("REG_Y: " + str(y) + " " + str(reg_y_coordinate))
+            #log("REG_X: " + str(x) + " " + str(reg_x_coordinate))
+            #log("REG_Y: " + str(y) + " " + str(reg_y_coordinate))
             self.c8.reg.v[0xF] = 0
 
             for y_offset in range(n): # y_offset is row of sprite
@@ -130,17 +130,13 @@ class OpcodeHandler(object):
                 sprite_int = self.c8.mem.mem[y_offset + self.c8.reg.i]
 
                 actual_y_coordinate = reg_y_coordinate + y_offset
-                actual_y_coordinate = actual_y_coordinate % 32
+
 
                 for x_offset, bit in enumerate(format(sprite_int, '08b')):
-                    # loop over each bit in the byte
 
                     actual_x_coordinate = reg_x_coordinate + x_offset
-                    actual_x_coordinate = actual_x_coordinate % 32
-                    log("y:" + str(actual_y_coordinate))
-                    log("x:" + str(actual_x_coordinate))
+
                     gfx_mem_index = actual_y_coordinate * 64 + actual_x_coordinate
-                    log(str(gfx_mem_index))
                     pixel = self.c8.mem.gfx[gfx_mem_index]
 
                     # XOR written like this for clarity
@@ -226,7 +222,7 @@ class OpcodeHandler(object):
             sys.exit()
 
         with open("log", "a") as f:
-            f.write( hex(opcode) + " " + str(self.c8.ticks) )
+            f.write( hex(opcode) + "\t\t\t" + str(self.c8.ticks) +"\t\t\t")
             f.write( str(self.c8.reg) )
             f.write("\n")
         #print(self.c8.reg)

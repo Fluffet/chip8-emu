@@ -56,6 +56,7 @@ class Chip8(object):
         self.screen = screen
         self.keypad = keypad
 
+
     def load_game(self, game):
         data = open("roms/" + game + ".rom", "rb").read()
 
