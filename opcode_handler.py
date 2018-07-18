@@ -11,7 +11,6 @@ def log(s):
 class OpcodeHandler(object):
     def __init__(self, chip8):
         self.c8 = chip8
-        self.co = 0     # Current op, just to avoid parameter spam
 
     def run_instruction(self, opcode):
         # I guess this is where most of the fun stuff happens
@@ -20,8 +19,8 @@ class OpcodeHandler(object):
 
         nnn = opcode & 0x0FFF
         n   = opcode & 0x000F
-        x   = opcode & 0x0F00 >> 8
-        y   = opcode & 0x00F0 >> 4
+        x   = (opcode & 0x0F00) >> 8
+        y   = (opcode & 0x00F0) >> 4
         kk  = opcode & 0x00FF
 
         if opcode == 0x00EE: # 00EE: Return from subroutine
@@ -125,7 +124,7 @@ class OpcodeHandler(object):
             log("REG_Y: " + str(y) + " " + str(reg_y_coordinate))
             self.c8.reg.v[0xF] = 0
 
-            for y_offset in range(n): # y_index is row of sprite
+            for y_offset in range(n): # y_offset is row of sprite
 
                 # get byte representation
                 sprite_int = self.c8.mem.mem[y_offset + self.c8.reg.i]
