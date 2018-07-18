@@ -26,6 +26,7 @@ def draw():
 
     for y in range(32):
         row = emu.mem.gfx[y*64 : y*64 + 64]
+
         for x in row:
             if x == 1:
                 s += "#"
@@ -39,11 +40,13 @@ def draw():
 
 def update_keys():
     c = screen.getch()
+
     if c != -1:
-        if c in keypad.items():
-            for k,v in keypad.items(): # reset all to 0
-                keypad[k] = 0
-            emu.keypad[c] = 1
+        c = chr(c)
+        for k,v in keypad.items(): # reset all to 0
+            keypad[k] = 0
+            if k == c:
+                emu.keypad[c] = 1
 
 try:
     while True:
@@ -52,7 +55,7 @@ try:
             draw()
 
         update_keys()
-        sleep(0.016)
+        sleep(0.16)
 
 except KeyboardInterrupt:
     curses.nocbreak()

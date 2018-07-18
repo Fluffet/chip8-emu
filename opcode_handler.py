@@ -24,8 +24,6 @@ class OpcodeHandler(object):
         y   = opcode & 0x00F0 >> 4
         kk  = opcode & 0x00FF
 
-        #print(hex(opcode), self.c8.ticks)
-
         if opcode == 0x00EE: # 00EE: Return from subroutine
             self.c8.reg.pc = self.c8.reg.stack.pop()
 
@@ -53,12 +51,13 @@ class OpcodeHandler(object):
                 self.c8.reg.pc += 2
 
         elif opcode & 0xF000 == 0x6000: # 6xkk - LD Vx, byte
+            log("load v" + str(x) + " with " + str(kk))
             self.c8.reg.v[x] = kk
 
         elif opcode & 0xF000 == 0x7000: # 7xkk - ADD Vx, byte
             r = self.c8.reg.v[x] + kk
             self.c8.reg.v[0xF] = 1 if r > 255 else 0
-            self.c8.reg.v[x] = r % 255
+            self.c8.reg.v[x] = r % 256
 
         elif opcode & 0xF00F == 0x8000: # 8xy0 - LD Vx, Vy
             self.c8.reg.v[x] = self.c8.reg.v[y]
@@ -75,7 +74,7 @@ class OpcodeHandler(object):
         elif opcode & 0xF00F == 0x8004: # 8xy4 - ADD Vx, Vy
             r = self.c8.reg.v[x] + self.c8.reg.v[y]
             self.c8.reg.v[0xF] = 1 if r > 255 else 0
-            self.c8.reg.v[x] = r % 255
+            self.c8.reg.v[x] = r % 256
 
         elif opcode & 0xF00F == 0x8005: # 8xy5 - SUB Vx, Vy
             r = self.c8.reg.v[x] - self.c8.reg.v[y]
@@ -99,8 +98,9 @@ class OpcodeHandler(object):
 
         elif opcode & 0xF00F == 0x800E: # 8xyE - SHL Vx {, Vy}
             r = self.c8.reg.v[x]
-            self.c8.reg.v[0xF] = r%2
-            r = r*2
+            bit_seven = r >> 8
+            self.c8.reg.v[0xF] = bit_seven
+            r = r << 1
             self.c8.reg.v[x] = r
 
         elif opcode & 0xF00F == 0x9000: # 9xy0 - SNE Vx, Vy
@@ -114,22 +114,34 @@ class OpcodeHandler(object):
             self.c8.reg.pc = nnn + self.c8.reg.v[0x0]
 
         elif opcode & 0xF000 == 0xC000: # RND Vx, byte
-            self.c8.reg.v[x] = int(random()*256) & kk
+            self.c8.reg.v[x] = kk & int(random()*256)
 
         elif opcode & 0xF000 == 0xD000: # Dxyn - DRW Vx, Vy, nibble
-            x_coordinate = self.c8.reg.v[x]
-            y_coordinate = self.c8.reg.v[y]
+
+            reg_x_coordinate = self.c8.reg.v[x]
+            reg_y_coordinate = self.c8.reg.v[y]
+
+            log("REG_X: " + str(x) + " " + str(reg_x_coordinate))
+            log("REG_Y: " + str(y) + " " + str(reg_y_coordinate))
             self.c8.reg.v[0xF] = 0
 
             for y_offset in range(n): # y_index is row of sprite
 
-                sprite_int = self.c8.mem.mem[y_offset + self.c8.reg.i]
                 # get byte representation
+                sprite_int = self.c8.mem.mem[y_offset + self.c8.reg.i]
+
+                actual_y_coordinate = reg_y_coordinate + y_offset
+                actual_y_coordinate = actual_y_coordinate % 32
 
                 for x_offset, bit in enumerate(format(sprite_int, '08b')):
                     # loop over each bit in the byte
 
-                    gfx_mem_index = ( y_coordinate + y_offset * 64 ) + x_coordinate + x_offset
+                    actual_x_coordinate = reg_x_coordinate + x_offset
+                    actual_x_coordinate = actual_x_coordinate % 32
+                    log("y:" + str(actual_y_coordinate))
+                    log("x:" + str(actual_x_coordinate))
+                    gfx_mem_index = actual_y_coordinate * 64 + actual_x_coordinate
+                    log(str(gfx_mem_index))
                     pixel = self.c8.mem.gfx[gfx_mem_index]
 
                     # XOR written like this for clarity
@@ -181,7 +193,6 @@ class OpcodeHandler(object):
 
         elif opcode & 0xF0FF == 0xF01E: # Fx1E - ADD I, Vx
             r = self.c8.reg.i + self.c8.reg.v[x]
-            self.c8.reg.v[0xF] = 1 if r > 255 else 0
             self.c8.reg.i = r
 
         elif opcode & 0xF0FF == 0xF029: # Fx29 - LD F, Vx
@@ -194,7 +205,7 @@ class OpcodeHandler(object):
             tens = math.floor(r / 10)
             r -= tens * 10
             units = r
-            self.c8.mem.mem[self.c8.reg.i]   = hundreds
+            self.c8.mem.mem[self.c8.reg.i  ] = hundreds
             self.c8.mem.mem[self.c8.reg.i+1] = tens
             self.c8.mem.mem[self.c8.reg.i+2] = units
 

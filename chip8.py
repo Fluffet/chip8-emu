@@ -72,10 +72,10 @@ class Chip8(object):
         # Update pc and timers
         self.reg.pc += 2
 
-        if self.tim.delay > 0:
+        if self.tim.delay != 0:
             self.tim.delay -= 1
 
-        if self.tim.sound > 0:
+        if self.tim.sound != 0:
             if self.tim.sound == 1:
                 print('\a')
 
