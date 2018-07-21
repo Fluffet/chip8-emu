@@ -34,7 +34,7 @@ class OpcodeHandler(object):
             self.c8.reg.pc = nnn
 
         elif opcode & 0xF000 == 0x2000: # 0x2NNN: Calls subroutine at address NNN
-            self.c8.reg.stack.append(self.c8.reg.pc)
+            self.c8.reg.stack.append( self.c8.reg.pc )
             self.c8.reg.pc = nnn
 
         elif opcode & 0xF000 == 0x3000: # 3xkk Skip next instruction if Vx = kk
@@ -50,13 +50,12 @@ class OpcodeHandler(object):
                 self.c8.reg.pc += 2
 
         elif opcode & 0xF000 == 0x6000: # 6xkk - LD Vx, byte
-            #log("load v" + str(x) + " with " + str(kk))
             self.c8.reg.v[x] = kk
 
         elif opcode & 0xF000 == 0x7000: # 7xkk - ADD Vx, byte
             r = self.c8.reg.v[x] + kk
             self.c8.reg.v[0xF] = 1 if r > 255 else 0
-            self.c8.reg.v[x] = r % 256
+            self.c8.reg.v[x] = r % 255
 
         elif opcode & 0xF00F == 0x8000: # 8xy0 - LD Vx, Vy
             self.c8.reg.v[x] = self.c8.reg.v[y]
@@ -73,7 +72,7 @@ class OpcodeHandler(object):
         elif opcode & 0xF00F == 0x8004: # 8xy4 - ADD Vx, Vy
             r = self.c8.reg.v[x] + self.c8.reg.v[y]
             self.c8.reg.v[0xF] = 1 if r > 255 else 0
-            self.c8.reg.v[x] = r % 256
+            self.c8.reg.v[x] = r % 255
 
         elif opcode & 0xF00F == 0x8005: # 8xy5 - SUB Vx, Vy
             r = self.c8.reg.v[x] - self.c8.reg.v[y]
@@ -94,17 +93,18 @@ class OpcodeHandler(object):
                 self.c8.reg.v[0xF] = 1
             else:
                 self.c8.reg.v[0xF] = 0
+            self.c8.reg.v[x] = r
 
         elif opcode & 0xF00F == 0x800E: # 8xyE - SHL Vx {, Vy}
             r = self.c8.reg.v[x]
-            bit_seven = r >> 8
-            self.c8.reg.v[0xF] = bit_seven
+            highest_bit = r >> 8
+            self.c8.reg.v[0xF] = highest_bit
             r = r << 1
             self.c8.reg.v[x] = r
 
         elif opcode & 0xF00F == 0x9000: # 9xy0 - SNE Vx, Vy
             if self.c8.reg.v[x] != self.c8.reg.v[y]:
-                pc += 2
+                self.c8.reg.pc += 2
 
         elif opcode & 0xF000 == 0xA000: # Annn - LD I, addr
             self.c8.reg.i = nnn
@@ -113,27 +113,23 @@ class OpcodeHandler(object):
             self.c8.reg.pc = nnn + self.c8.reg.v[0x0]
 
         elif opcode & 0xF000 == 0xC000: # RND Vx, byte
-            self.c8.reg.v[x] = kk & int(random()*256)
+            self.c8.reg.v[x] = kk & int(random()*255)
 
         elif opcode & 0xF000 == 0xD000: # Dxyn - DRW Vx, Vy, nibble
-
             reg_x_coordinate = self.c8.reg.v[x]
             reg_y_coordinate = self.c8.reg.v[y]
-
-            #log("REG_X: " + str(x) + " " + str(reg_x_coordinate))
-            #log("REG_Y: " + str(y) + " " + str(reg_y_coordinate))
             self.c8.reg.v[0xF] = 0
 
             for y_offset in range(n): # y_offset is row of sprite
-
                 # get byte representation
                 sprite_int = self.c8.mem.mem[y_offset + self.c8.reg.i]
 
                 actual_y_coordinate = reg_y_coordinate + y_offset
 
-
                 for x_offset, bit in enumerate(format(sprite_int, '08b')):
-
+                    # loop through each bit in the byte
+                    # find index in gfx memory array
+                    # then XOR on the sprite bit vs gfx memory
                     actual_x_coordinate = reg_x_coordinate + x_offset
 
                     gfx_mem_index = actual_y_coordinate * 64 + actual_x_coordinate
@@ -160,13 +156,13 @@ class OpcodeHandler(object):
             # Skips the next instruction if the key stored in VX is pressed
             key = self.c8.mem.v[x]
             if self.c8.mem.keypad[key] == 1:
-                pc += 2
+                self.c8.reg.pc += 2
 
         elif opcode & 0xF0FF == 0xE0A1: # SKNP Vx
             # Skips the next instruction if the key stored in VX is NOT pressed
             key = self.c8.mem.v[x]
             if self.c8.mem.keypad[key] == 0:
-                pc += 2
+                self.c8.reg.pc += 2
 
         elif opcode & 0xF0FF == 0xF007: # LD Vx, DT
             self.c8.reg.v[x] = self.c8.tim.delay

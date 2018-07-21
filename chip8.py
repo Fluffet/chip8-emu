@@ -67,17 +67,24 @@ class Chip8(object):
         # Fetch opcode
         opcode = self.mem.mem[self.reg.pc] << 8 | self.mem.mem[self.reg.pc+1]
 
+
         # Execute opcode
         self.opcode_handler.run_instruction(opcode)
 
         # Update pc and timers
-        self.reg.pc += 2
 
-        if self.tim.delay != 0:
+        with open("log", "a") as f:
+            f.write(str(self.tim.delay) + "\n")
+            f.write(str(self.tim.sound) + "\n")
+
+        if self.tim.delay > 0:
             self.tim.delay -= 1
 
-        if self.tim.sound != 0:
+        if self.tim.sound > 0:
+            self.tim.sound -= 1
             if self.tim.sound == 1:
                 print('\a')
+
+        self.reg.pc += 2
 
         self.ticks += 1
