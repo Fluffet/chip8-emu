@@ -63,7 +63,7 @@ try:
             draw()
 
         update_keys()
-        sleep(0.16)
+        sleep(0.016)
 
 except KeyboardInterrupt:
     curses.nocbreak()

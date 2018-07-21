@@ -31,11 +31,11 @@ class OpcodeHandler(object):
             self.c8.draw_flag = True
 
         elif opcode & 0xF000 == 0x1000: # 1NNN: Jump to NNN
-            self.c8.reg.pc = nnn
+            self.c8.reg.pc = nnn - 2 # it will increment by 2 after main loop to nnn
 
         elif opcode & 0xF000 == 0x2000: # 0x2NNN: Calls subroutine at address NNN
             self.c8.reg.stack.append( self.c8.reg.pc )
-            self.c8.reg.pc = nnn
+            self.c8.reg.pc = nnn - 2 # it will increment by 2 after main loop to nnn
 
         elif opcode & 0xF000 == 0x3000: # 3xkk Skip next instruction if Vx = kk
             if self.c8.reg.v[x] == kk:
@@ -160,7 +160,7 @@ class OpcodeHandler(object):
 
         elif opcode & 0xF0FF == 0xE0A1: # SKNP Vx
             # Skips the next instruction if the key stored in VX is NOT pressed
-            key = self.c8.mem.v[x]
+            key = self.c8.reg.v[x]
             if self.c8.mem.keypad[key] == 0:
                 self.c8.reg.pc += 2
 
