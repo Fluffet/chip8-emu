@@ -34,14 +34,6 @@ def draw():
                 s += " "
         s += "\n"
 
-    try:
-        pass
-    except ERR as e:
-        raise
-    else:
-        pass
-    finally:
-        pass
     screen.addstr(0,0,s)
     screen.refresh()
     emu.draw_flag = False
